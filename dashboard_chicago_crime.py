@@ -149,11 +149,14 @@ html, body, [class*="css"] {
 /* Page title */
 .page-title {
     font-family: 'Syne', sans-serif;
-    font-size: 2.2rem;
+    font-size: 1.9rem;
     font-weight: 800;
     color: #e6edf3;
     letter-spacing: -0.03em;
-    line-height: 1.15;
+    line-height: 1.4;
+    padding-top: 20px;
+    margin-top: 10px;
+}
 }
 .page-title span { color: #58a6ff; }
 .page-desc {
@@ -210,8 +213,8 @@ def apply_base(fig, title=""):
 # DATA LOADING
 # ─────────────────────────────────────────────
 @st.cache_data
-def load_data(uploaded_file):
-    df = pd.read_csv(uploaded_file)
+def load_data():
+    df = pd.read_csv("chicago_crime.csv")
     df.columns = df.columns.str.lower().str.strip()
     # parse date
     df['date'] = pd.to_datetime(df['date'], errors='coerce', utc=True)
@@ -261,45 +264,25 @@ def run_kmeans(_feats, k=6):
 with st.sidebar:
     st.markdown("### 🔍 Chicago Crime\n**Analisis 2020–2025**")
     st.markdown("<div class='hline'></div>", unsafe_allow_html=True)
-    uploaded = st.file_uploader("Upload CSV dataset", type=["csv"])
+   
+    df_raw = load_data()
+    year_options = sorted(df_raw['year'].unique().tolist())
+    year_filter = st.multiselect(
+        "Filter Tahun",
+        year_options,
+        default=year_options
+    )
+
+    df = df_raw[df_raw['year'].isin(year_filter)].copy()
+
     st.markdown("<div class='hline'></div>", unsafe_allow_html=True)
-
-    if uploaded:
-        df_raw = load_data(uploaded)
-        year_options = sorted(df_raw['year'].unique().tolist())
-        year_filter = st.multiselect("Filter Tahun", year_options, default=year_options)
-        df = df_raw[df_raw['year'].isin(year_filter)].copy()
-
-        st.markdown("<div class='hline'></div>", unsafe_allow_html=True)
-        st.caption(f"📊 **{len(df):,}** baris aktif dari {df['year'].min()}–{df['year'].max()}")
-        st.caption(f"🗂️ **{df['primary_type'].nunique()}** tipe kejahatan")
-        st.caption(f"🏙️ **{df['district'].nunique()}** district")
+    st.caption(f"📊 **{len(df):,}** baris aktif dari {df['year'].min()}–{df['year'].max()}")
+    st.caption(f"🗂️ **{df['primary_type'].nunique()}** tipe kejahatan")
+    st.caption(f"🏙️ **{df['district'].nunique()}** district")
 
     st.markdown("<div class='hline'></div>", unsafe_allow_html=True)
     st.caption("📌 Sumber: BigQuery Public Dataset\n`bigquery-public-data.chicago_crime.crime`")
     st.caption("🎓 Proyek Akhir — Analisis Data Berbasis Cloud (SST60202)")
-
-# ─────────────────────────────────────────────
-# MAIN CONTENT
-# ─────────────────────────────────────────────
-if not uploaded:
-    # ── Landing / upload prompt ──
-    st.markdown("""
-    <div style="text-align:center; padding: 4rem 2rem;">
-        <div style="font-size:4rem">🏙️</div>
-        <div class="page-title" style="text-align:center; font-size:2.6rem">
-            Chicago Crime<br><span>Dashboard</span>
-        </div>
-        <div class="page-desc" style="text-align:center; max-width:500px; margin: 1rem auto">
-            Analisis tren dan pola kriminalitas di Chicago tahun 2020–2025 
-            menggunakan BigQuery dan K-Means Clustering.
-        </div>
-        <div style="margin-top:2rem; color:#8b949e; font-size:0.9rem">
-            ⬅️ Upload file CSV dataset Chicago Crime di sidebar untuk memulai
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-    st.stop()
 
 # ─────────────────────────────────────────────
 # HEADER + KPI
